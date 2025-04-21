@@ -86,24 +86,33 @@ document.getElementById('game-container').appendChild(controlsDiv);
 // Set canvas dimensions
 // Set canvas dimensions with mobile adjustments
 function resizeCanvas() {
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
-    
-    // Check if we're on mobile
-    const isMobile = window.innerWidth < 768;
-    
-    if (isMobile) {
-        game.groundY = canvas.height - 200; // Raised ground for mobile
-        
-        // Adjust canvas position
-        canvas.style.position = 'relative';
-        canvas.style.top = '-150px';
+    // Use the visual viewport API for accurate viewport size on mobile
+    if (window.visualViewport) {
+        canvas.width = window.visualViewport.width;
+        canvas.height = window.visualViewport.height;
     } else {
-        game.groundY = canvas.height - 50; // Normal ground level
-        canvas.style.position = 'static';
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
     }
     
-    player.y = game.groundY - player.height;
+    // Set ground level appropriately
+    const isMobile = window.innerWidth < 768;
+    if (isMobile) {
+        // Reserve space at bottom for controls (50px plus margin)
+        game.groundY = canvas.height - 70;
+    } else {
+        game.groundY = canvas.height - 50;
+    }
+    
+    // Update player position
+    if (player) {
+        player.y = game.groundY - player.height;
+    }
+    
+    // Re-create mobile controls after resize
+    if (isMobile) {
+        setupMobileControls();
+    }
 }
 
 resizeCanvas();
@@ -1168,8 +1177,6 @@ if (!CanvasRenderingContext2D.prototype.roundRect) {
         return this;
     };
 }
-
-// Function to setup mobile controls with proper positioning
 function setupMobileControls() {
     // Remove any existing mobile controls
     const existingControls = document.getElementById('mobile-controls');
@@ -1177,108 +1184,89 @@ function setupMobileControls() {
         existingControls.remove();
     }
     
-    // Check if we're on mobile
-    const isMobile = window.innerWidth < 768;
-    
-    if (isMobile) {
-        // Adjust the game canvas position to move content up
-        const gameCanvas = document.getElementById('game-canvas');
-        gameCanvas.style.position = 'relative';
-        gameCanvas.style.top = '-150px'; // Move content up
-        
-        // Adjust the ground level for mobile
-        game.groundY = canvas.height - 200; // Raised by 150px
-        
-        // Also adjust the UI container position
-        const uiContainer = document.getElementById('ui-container');
-        if (uiContainer) {
-            uiContainer.style.top = '10px';
-        }
-    }
-    
-    // Create mobile controls container
+    // Create container that sits at the bottom of the visible area
     const mobileControls = document.createElement('div');
     mobileControls.id = 'mobile-controls';
-    mobileControls.style.position = 'fixed'; // Changed from absolute to fixed
-    mobileControls.style.bottom = '50px'; // Increased from 20px
+    mobileControls.style.position = 'absolute';
+    mobileControls.style.bottom = '10px'; // Small margin from bottom
     mobileControls.style.left = '0';
     mobileControls.style.width = '100%';
     mobileControls.style.display = 'flex';
     mobileControls.style.justifyContent = 'space-between';
-    mobileControls.style.zIndex = '1000'; // Ensure controls are on top
-    mobileControls.style.pointerEvents = 'none'; // Container doesn't block events
+    mobileControls.style.padding = '0 15px';
+    mobileControls.style.boxSizing = 'border-box';
+    mobileControls.style.pointerEvents = 'none'; // So it doesn't block other interactions
     
-    // Direction buttons (left side)
-    const directionButtons = document.createElement('div');
-    directionButtons.style.display = 'flex';
-    directionButtons.style.marginLeft = '20px';
-    directionButtons.style.gap = '10px';
+    // Left side buttons
+    const leftControls = document.createElement('div');
+    leftControls.style.display = 'flex';
+    leftControls.style.gap = '10px';
     
     // Left button
     const leftBtn = document.createElement('button');
     leftBtn.textContent = '←';
-    leftBtn.style.width = '60px';
-    leftBtn.style.height = '60px';
-    leftBtn.style.fontSize = '24px';
-    leftBtn.style.backgroundColor = 'rgba(0, 0, 0, 0.5)';
+    leftBtn.style.width = '45px';
+    leftBtn.style.height = '45px';
+    leftBtn.style.fontSize = '18px';
+    leftBtn.style.backgroundColor = 'rgba(0, 0, 0, 0.7)';
     leftBtn.style.color = 'white';
-    leftBtn.style.border = '2px solid white';
-    leftBtn.style.borderRadius = '50%';
+    leftBtn.style.border = '1px solid white';
+    leftBtn.style.borderRadius = '5px';
     leftBtn.style.pointerEvents = 'auto';
     
     // Right button
     const rightBtn = document.createElement('button');
     rightBtn.textContent = '→';
-    rightBtn.style.width = '60px';
-    rightBtn.style.height = '60px';
-    rightBtn.style.fontSize = '24px';
-    rightBtn.style.backgroundColor = 'rgba(0, 0, 0, 0.5)';
+    rightBtn.style.width = '45px';
+    rightBtn.style.height = '45px';
+    rightBtn.style.fontSize = '18px';
+    rightBtn.style.backgroundColor = 'rgba(0, 0, 0, 0.7)';
     rightBtn.style.color = 'white';
-    rightBtn.style.border = '2px solid white';
-    rightBtn.style.borderRadius = '50%';
+    rightBtn.style.border = '1px solid white';
+    rightBtn.style.borderRadius = '5px';
     rightBtn.style.pointerEvents = 'auto';
     
-    // Add direction buttons
-    directionButtons.appendChild(leftBtn);
-    directionButtons.appendChild(rightBtn);
+    leftControls.appendChild(leftBtn);
+    leftControls.appendChild(rightBtn);
     
-    // Action buttons (right side)
-    const actionButtons = document.createElement('div');
-    actionButtons.style.display = 'flex';
-    actionButtons.style.marginRight = '20px';
-    actionButtons.style.gap = '20px';
+    // Right side buttons
+    const rightControls = document.createElement('div');
+    rightControls.style.display = 'flex';
+    rightControls.style.gap = '10px';
     
     // Jump button
     const jumpBtn = document.createElement('button');
-    jumpBtn.textContent = 'Jump';
-    jumpBtn.style.width = '70px';
-    jumpBtn.style.height = '60px';
-    jumpBtn.style.fontSize = '16px';
-    jumpBtn.style.backgroundColor = 'rgba(0, 0, 0, 0.5)';
+    jumpBtn.textContent = 'JUMP';
+    jumpBtn.style.width = '55px';
+    jumpBtn.style.height = '45px';
+    jumpBtn.style.fontSize = '14px';
+    jumpBtn.style.backgroundColor = 'rgba(0, 0, 0, 0.7)';
     jumpBtn.style.color = 'white';
-    jumpBtn.style.border = '2px solid white';
-    jumpBtn.style.borderRadius = '30px';
+    jumpBtn.style.border = '1px solid white';
+    jumpBtn.style.borderRadius = '5px';
     jumpBtn.style.pointerEvents = 'auto';
     
     // Shoot button
     const shootBtn = document.createElement('button');
-    shootBtn.textContent = 'Shoot';
-    shootBtn.style.width = '70px';
-    shootBtn.style.height = '60px';
-    shootBtn.style.fontSize = '16px';
-    shootBtn.style.backgroundColor = 'rgba(0, 0, 0, 0.5)';
+    shootBtn.textContent = 'SHOOT';
+    shootBtn.style.width = '55px';
+    shootBtn.style.height = '45px';
+    shootBtn.style.fontSize = '14px';
+    shootBtn.style.backgroundColor = 'rgba(0, 0, 0, 0.7)';
     shootBtn.style.color = 'white';
-    shootBtn.style.border = '2px solid white';
-    shootBtn.style.borderRadius = '30px';
+    shootBtn.style.border = '1px solid white';
+    shootBtn.style.borderRadius = '5px';
     shootBtn.style.pointerEvents = 'auto';
     
-    // Add action buttons
-    actionButtons.appendChild(jumpBtn);
-    actionButtons.appendChild(shootBtn);
+    rightControls.appendChild(jumpBtn);
+    rightControls.appendChild(shootBtn);
     
     // Add button containers to mobile controls
-    mobileControls.appendChild(directionButtons);
-    mobileControls.appendChild(actionButtons);
+    mobileControls.appendChild(leftControls);
+    mobileControls.appendChild(rightControls);
+    
+    // Add to document - directly to the canvas parent for proper positioning
+    canvas.parentElement.appendChild(mobileControls);
     
     // Add event listeners for buttons
     leftBtn.addEventListener('touchstart', (e) => {
@@ -1321,42 +1309,11 @@ function setupMobileControls() {
         keys.x = false;
     });
     
-    // Add to document
-    document.getElementById('game-container').appendChild(mobileControls);
-    
-    // Hide desktop controls on mobile
+    // Hide desktop controls
     const controlsDiv = document.getElementById('controls');
     if (controlsDiv) {
         controlsDiv.style.display = 'none';
     }
-    
-    // Add CSS to ensure mobile controls are visible and game elements are positioned correctly
-    const styleTag = document.createElement('style');
-    styleTag.textContent = `
-        @media (min-width: 768px) {
-            #mobile-controls {
-                display: none !important;
-            }
-            #controls {
-                display: block !important;
-            }
-        }
-        @media (max-width: 767px) {
-            #controls {
-                display: none !important;
-            }
-            #game-over, #level-complete {
-                position: fixed !important;
-                top: 40% !important;
-            }
-            /* Create space at the bottom for controls */
-            #game-container {
-                padding-bottom: 150px;
-                box-sizing: border-box;
-            }
-        }
-    `;
-    document.head.appendChild(styleTag);
 }
 
 // Touch movement handling

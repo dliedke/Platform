@@ -101,6 +101,35 @@
             overscroll-behavior-y: contain;
             touch-action: manipulation;
         }
+        /* Make game container position relative to handle absolute positioning */
+#game-container {
+    position: relative !important;
+    overflow: hidden !important;
+}
+
+/* Force canvas to use available viewport */
+#game-canvas {
+    display: block;
+    width: 100vw;
+    height: 100vh;
+    touch-action: none; /* Prevent browser handling of touch gestures */
+}
+
+/* Adjust UI position on mobile */
+@media (max-width: 767px) {
+    #ui-container {
+        position: fixed;
+        top: 10px;
+        left: 10px;
+        z-index: 999;
+    }
+    
+    /* Adjust positions of dialogs */
+    #game-over, #level-complete {
+        z-index: 1000;
+    }
+}
+
     </style>
 </head>
 <body>
