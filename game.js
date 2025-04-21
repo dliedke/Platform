@@ -14,6 +14,7 @@ let isMobileDevice = false;
 // Add this at the beginning of your code to create a global offset variable
 const MOBILE_VERTICAL_OFFSET = 140; // This is the value you can adjust to move everything up
 const MOBILE_MONSTER_SPEED_MODIFIER = 0.4; // Monsters are 60% slower on mobile
+const JUMP_SLOWDOWN_FACTOR = 0.8; // Adjust this value between 0.5-0.8 to control jump speed
 
 // Detect if we're on a mobile device
 function detectMobileDevice() {
@@ -35,7 +36,7 @@ let game = {
     weaponTypes: ['Basic', 'Enhanced', 'Super', 'Ultra', 'Legendary'],
     gravity: 0.4,
     groundY: canvas.height - 50,
-    scrollSpeed: 5,
+    scrollSpeed: 2,
     monsterSpawnFrequency: 0.009, // Reduced from 0.01
     powerUpSpawnRate: 300, // Increased from 300 (less frequent)
     levelProgress: 0,
@@ -276,10 +277,7 @@ function update() {
         player.facingRight = true;
         
         // Scroll the world when player moves right past a threshold
-        // Use a lower threshold (more to the left) for mobile devices
-        const scrollThreshold = isMobileDevice ? 
-            canvas.width / 6 : // 1/6 of screen width for mobile 
-            canvas.width / 3;  // 1/3 of screen width for desktop
+        const scrollThreshold =canvas.width / 2;  // 1/2 of screen width
             
         if (game.playerControlledScroll && player.x > scrollThreshold) {
             shouldScroll = true;
@@ -295,8 +293,10 @@ function update() {
     }
     
     // Handle jumping
-    if ((keys.ArrowUp || keys.w || keys[' '] || touchJump) && !player.isJumping) {
-        player.velY = -player.jumpPower;
+     // Handle jumping with modified physics for slower jumps
+     if ((keys.ArrowUp || keys.w || keys[' '] || touchJump) && !player.isJumping) {
+        // Reduce initial velocity but keep same potential height
+        player.velY = -player.jumpPower * JUMP_SLOWDOWN_FACTOR;
         player.isJumping = true;
         touchJump = false;
     }
@@ -323,7 +323,15 @@ function update() {
     }
     
     // Update player position with gravity
-    player.velY += game.gravity;
+    // Apply gravity with the same factor to maintain height
+    if (player.isJumping) {
+        // Apply reduced gravity while jumping to match reduced initial velocity
+        player.velY += game.gravity * JUMP_SLOWDOWN_FACTOR;
+    } else {
+        // Normal gravity when not jumping
+        player.velY += game.gravity;
+    }
+    
     player.y += player.velY;
     player.x += player.velX;
     
