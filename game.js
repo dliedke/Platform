@@ -1222,7 +1222,7 @@ function setupMobileControls() {
     const mobileControls = document.createElement('div');
     mobileControls.id = 'mobile-controls';
     mobileControls.style.position = 'absolute';
-    mobileControls.style.bottom = '90px'; // Posicionado mais acima como solicitado
+    mobileControls.style.bottom = '100px'; // Posicionado mais acima como solicitado
     mobileControls.style.left = '0';
     mobileControls.style.width = '100%';
     mobileControls.style.display = 'flex';
@@ -1239,8 +1239,8 @@ function setupMobileControls() {
     // Botão esquerda
     const leftBtn = document.createElement('button');
     leftBtn.textContent = '←';
-    leftBtn.style.width = '50px';
-    leftBtn.style.height = '50px';
+    leftBtn.style.width = '70px';
+    leftBtn.style.height = '70px';
     leftBtn.style.fontSize = '24px';
     leftBtn.style.backgroundColor = 'rgba(0, 0, 0, 0.6)';
     leftBtn.style.color = 'white';
@@ -1250,8 +1250,8 @@ function setupMobileControls() {
     // Botão direita
     const rightBtn = document.createElement('button');
     rightBtn.textContent = '→';
-    rightBtn.style.width = '50px';
-    rightBtn.style.height = '50px';
+    rightBtn.style.width = '70px';
+    rightBtn.style.height = '70px';
     rightBtn.style.fontSize = '24px';
     rightBtn.style.backgroundColor = 'rgba(0, 0, 0, 0.6)';
     rightBtn.style.color = 'white';
@@ -1269,8 +1269,8 @@ function setupMobileControls() {
     // Botão pular
     const jumpBtn = document.createElement('button');
     jumpBtn.textContent = 'JUMP';
-    jumpBtn.style.width = '60px';
-    jumpBtn.style.height = '50px';
+    jumpBtn.style.width = '80px';
+    jumpBtn.style.height = '70px';
     jumpBtn.style.fontSize = '14px';
     jumpBtn.style.backgroundColor = 'rgba(0, 0, 0, 0.6)';
     jumpBtn.style.color = 'white';
@@ -1280,8 +1280,8 @@ function setupMobileControls() {
     // Botão atirar
     const shootBtn = document.createElement('button');
     shootBtn.textContent = 'SHOOT';
-    shootBtn.style.width = '60px';
-    shootBtn.style.height = '50px';
+    shootBtn.style.width = '80px';
+    shootBtn.style.height = '70px';
     shootBtn.style.fontSize = '14px';
     shootBtn.style.backgroundColor = 'rgba(0, 0, 0, 0.6)';
     shootBtn.style.color = 'white';
