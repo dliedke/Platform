@@ -45,13 +45,13 @@ let game = {
 // Update player physics for higher, slower jumps
 let player = {
     x: 100,
-    y: 0, // Will be set in resizeCanvas
+    y: game.groundY - 60, // This will now use the correct ground level
     width: 40,
     height: 60,
     velX: 0,
     velY: 0,
     speed: 5,
-    jumpPower: 18, // Increased from 15 for higher jumps
+    jumpPower: 15,
     isJumping: false,
     isAttacking: false,
     attackCooldown: 0,
@@ -84,12 +84,28 @@ controlsDiv.innerHTML = 'Controls: SPACE to Jump, X to Shoot, Arrow Keys to Move
 document.getElementById('game-container').appendChild(controlsDiv);
 
 // Set canvas dimensions
+// Set canvas dimensions with mobile adjustments
 function resizeCanvas() {
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;
-    game.groundY = canvas.height - 50;
+    
+    // Check if we're on mobile
+    const isMobile = window.innerWidth < 768;
+    
+    if (isMobile) {
+        game.groundY = canvas.height - 200; // Raised ground for mobile
+        
+        // Adjust canvas position
+        canvas.style.position = 'relative';
+        canvas.style.top = '-150px';
+    } else {
+        game.groundY = canvas.height - 50; // Normal ground level
+        canvas.style.position = 'static';
+    }
+    
     player.y = game.groundY - player.height;
 }
+
 resizeCanvas();
 window.addEventListener('resize', resizeCanvas);
 
@@ -1070,7 +1086,7 @@ function restartGame() {
     
     player = {
         x: 100,
-        y: game.groundY - 60,
+        y: game.groundY - 60, // This will now use the correct ground level
         width: 40,
         height: 60,
         velX: 0,
@@ -1153,6 +1169,7 @@ if (!CanvasRenderingContext2D.prototype.roundRect) {
     };
 }
 
+// Function to setup mobile controls with proper positioning
 function setupMobileControls() {
     // Remove any existing mobile controls
     const existingControls = document.getElementById('mobile-controls');
@@ -1160,14 +1177,35 @@ function setupMobileControls() {
         existingControls.remove();
     }
     
+    // Check if we're on mobile
+    const isMobile = window.innerWidth < 768;
+    
+    if (isMobile) {
+        // Adjust the game canvas position to move content up
+        const gameCanvas = document.getElementById('game-canvas');
+        gameCanvas.style.position = 'relative';
+        gameCanvas.style.top = '-150px'; // Move content up
+        
+        // Adjust the ground level for mobile
+        game.groundY = canvas.height - 200; // Raised by 150px
+        
+        // Also adjust the UI container position
+        const uiContainer = document.getElementById('ui-container');
+        if (uiContainer) {
+            uiContainer.style.top = '10px';
+        }
+    }
+    
     // Create mobile controls container
     const mobileControls = document.createElement('div');
     mobileControls.id = 'mobile-controls';
-    mobileControls.style.position = 'absolute';
-    mobileControls.style.bottom = '20px';
+    mobileControls.style.position = 'fixed'; // Changed from absolute to fixed
+    mobileControls.style.bottom = '50px'; // Increased from 20px
+    mobileControls.style.left = '0';
     mobileControls.style.width = '100%';
     mobileControls.style.display = 'flex';
     mobileControls.style.justifyContent = 'space-between';
+    mobileControls.style.zIndex = '1000'; // Ensure controls are on top
     mobileControls.style.pointerEvents = 'none'; // Container doesn't block events
     
     // Direction buttons (left side)
@@ -1179,22 +1217,24 @@ function setupMobileControls() {
     // Left button
     const leftBtn = document.createElement('button');
     leftBtn.textContent = '←';
-    leftBtn.style.width = '50px';
-    leftBtn.style.height = '50px';
-    leftBtn.style.fontSize = '20px';
-    leftBtn.style.backgroundColor = 'rgba(255, 255, 255, 0.4)';
-    leftBtn.style.border = 'none';
+    leftBtn.style.width = '60px';
+    leftBtn.style.height = '60px';
+    leftBtn.style.fontSize = '24px';
+    leftBtn.style.backgroundColor = 'rgba(0, 0, 0, 0.5)';
+    leftBtn.style.color = 'white';
+    leftBtn.style.border = '2px solid white';
     leftBtn.style.borderRadius = '50%';
     leftBtn.style.pointerEvents = 'auto';
     
     // Right button
     const rightBtn = document.createElement('button');
     rightBtn.textContent = '→';
-    rightBtn.style.width = '50px';
-    rightBtn.style.height = '50px';
-    rightBtn.style.fontSize = '20px';
-    rightBtn.style.backgroundColor = 'rgba(255, 255, 255, 0.4)';
-    rightBtn.style.border = 'none';
+    rightBtn.style.width = '60px';
+    rightBtn.style.height = '60px';
+    rightBtn.style.fontSize = '24px';
+    rightBtn.style.backgroundColor = 'rgba(0, 0, 0, 0.5)';
+    rightBtn.style.color = 'white';
+    rightBtn.style.border = '2px solid white';
     rightBtn.style.borderRadius = '50%';
     rightBtn.style.pointerEvents = 'auto';
     
@@ -1206,28 +1246,30 @@ function setupMobileControls() {
     const actionButtons = document.createElement('div');
     actionButtons.style.display = 'flex';
     actionButtons.style.marginRight = '20px';
-    actionButtons.style.gap = '10px';
+    actionButtons.style.gap = '20px';
     
     // Jump button
     const jumpBtn = document.createElement('button');
     jumpBtn.textContent = 'Jump';
-    jumpBtn.style.width = '60px';
-    jumpBtn.style.height = '50px';
-    jumpBtn.style.fontSize = '14px';
-    jumpBtn.style.backgroundColor = 'rgba(255, 255, 255, 0.4)';
-    jumpBtn.style.border = 'none';
-    jumpBtn.style.borderRadius = '25px';
+    jumpBtn.style.width = '70px';
+    jumpBtn.style.height = '60px';
+    jumpBtn.style.fontSize = '16px';
+    jumpBtn.style.backgroundColor = 'rgba(0, 0, 0, 0.5)';
+    jumpBtn.style.color = 'white';
+    jumpBtn.style.border = '2px solid white';
+    jumpBtn.style.borderRadius = '30px';
     jumpBtn.style.pointerEvents = 'auto';
     
     // Shoot button
     const shootBtn = document.createElement('button');
     shootBtn.textContent = 'Shoot';
-    shootBtn.style.width = '60px';
-    shootBtn.style.height = '50px';
-    shootBtn.style.fontSize = '14px';
-    shootBtn.style.backgroundColor = 'rgba(255, 255, 255, 0.4)';
-    shootBtn.style.border = 'none';
-    shootBtn.style.borderRadius = '25px';
+    shootBtn.style.width = '70px';
+    shootBtn.style.height = '60px';
+    shootBtn.style.fontSize = '16px';
+    shootBtn.style.backgroundColor = 'rgba(0, 0, 0, 0.5)';
+    shootBtn.style.color = 'white';
+    shootBtn.style.border = '2px solid white';
+    shootBtn.style.borderRadius = '30px';
     shootBtn.style.pointerEvents = 'auto';
     
     // Add action buttons
@@ -1288,7 +1330,7 @@ function setupMobileControls() {
         controlsDiv.style.display = 'none';
     }
     
-    // Add media query to show/hide based on device
+    // Add CSS to ensure mobile controls are visible and game elements are positioned correctly
     const styleTag = document.createElement('style');
     styleTag.textContent = `
         @media (min-width: 768px) {
@@ -1302,6 +1344,15 @@ function setupMobileControls() {
         @media (max-width: 767px) {
             #controls {
                 display: none !important;
+            }
+            #game-over, #level-complete {
+                position: fixed !important;
+                top: 40% !important;
+            }
+            /* Create space at the bottom for controls */
+            #game-container {
+                padding-bottom: 150px;
+                box-sizing: border-box;
             }
         }
     `;
