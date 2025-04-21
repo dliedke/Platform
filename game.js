@@ -14,7 +14,7 @@ let isMobileDevice = false;
 // Add this at the beginning of your code to create a global offset variable
 const MOBILE_VERTICAL_OFFSET = 140; // This is the value you can adjust to move everything up
 const MOBILE_MONSTER_SPEED_MODIFIER = 0.4; // Monsters are 60% slower on mobile
-const JUMP_SLOWDOWN_FACTOR = 0.8; // Adjust this value between 0.5-0.8 to control jump speed
+const JUMP_SLOWDOWN_FACTOR = 1; // Adjust this value between 0.5-0.8 to control jump speed
 
 // Detect if we're on a mobile device
 function detectMobileDevice() {
@@ -277,7 +277,7 @@ function update() {
         player.facingRight = true;
         
         // Scroll the world when player moves right past a threshold
-        const scrollThreshold =canvas.width / 2;  // 1/2 of screen width
+        const scrollThreshold =canvas.width / 2.5;  // 1/2.5 of screen width
             
         if (game.playerControlledScroll && player.x > scrollThreshold) {
             shouldScroll = true;
