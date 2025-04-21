@@ -36,8 +36,8 @@ let game = {
     gravity: 0.4,
     groundY: canvas.height - 50,
     scrollSpeed: 5,
-    monsterSpawnFrequency: 0.007, // Reduced from 0.01
-    powerUpSpawnRate: 350, // Increased from 300 (less frequent)
+    monsterSpawnFrequency: 0.009, // Reduced from 0.01
+    powerUpSpawnRate: 300, // Increased from 300 (less frequent)
     levelProgress: 0,
     levelLength: 9000, // Slightly shorter than original 10000
     platformDensity: 0.8, // Reduced from 1.0
@@ -123,17 +123,17 @@ window.addEventListener('resize', resizeCanvas);
 function generatePlatforms() {
     platforms = [];
     
-    // Ground platform
+    // Ground platform - make it extremely wide to ensure it never disappears
     platforms.push({
-        x: -500,
+        x: -2000, // Start far left of the screen
         y: game.groundY,
-        width: canvas.width * 15,
+        width: game.levelLength + canvas.width * 10, // Add extra width to ensure it extends beyond level end
         height: 50,
         color: '#4CAF50'
     });
     
-    // Generate a field of platforms with adjusted density
-    const platformCount = Math.floor(20 * game.platformDensity); // Reduced from 30 to 20
+    // Generate platforms across the entire level length
+    const platformCount = Math.floor(40 * game.platformDensity); // Increased from 20 to 40
     
     // Platform sizes
     const platformSizes = [
@@ -153,7 +153,7 @@ function generatePlatforms() {
         game.groundY - 280
     ];
     
-    // Generate platforms with better spacing
+    // Generate platforms evenly across the entire level length
     for (let i = 0; i < platformCount; i++) {
         // Choose a random platform size
         const sizeIndex = Math.floor(Math.random() * platformSizes.length);
@@ -163,12 +163,13 @@ function generatePlatforms() {
         const heightIndex = Math.floor(Math.random() * possibleHeights.length);
         const height = possibleHeights[heightIndex];
         
-        // Calculate x position with increased spacing
-        // Distribute platforms evenly across the level with more space
-        const xPos = canvas.width + (i * canvas.width * 6 / platformCount); // Changed multiplier from 5 to 6
+        // Calculate x position to spread platforms evenly across the entire level length
+        // We divide the level length into roughly equal sections for platform placement
+        const sectionLength = game.levelLength / (platformCount - 5); // Subtract a few to account for initial platforms
+        const xPos = canvas.width + (i * sectionLength);
         
         // Add some random variation to prevent too much regularity
-        const xVariation = Math.random() * 120 - 60; // Increased variation
+        const xVariation = Math.random() * 120 - 60;
         
         platforms.push({
             x: xPos + xVariation,
@@ -179,9 +180,9 @@ function generatePlatforms() {
         });
         
         // Add some extra smaller platforms for level progression (reduced chance)
-        if (Math.random() < 0.15) { // Reduced from 0.3 to 0.15
+        if (Math.random() < 0.25) { // Increased from 0.15 to 0.25 for more platforms
             platforms.push({
-                x: xPos + 180 + Math.random() * 120, // Increased spacing
+                x: xPos + 180 + Math.random() * 120,
                 y: height + (Math.random() > 0.5 ? -50 : 50),
                 width: 120 + Math.random() * 80,
                 height: 25,
@@ -264,19 +265,24 @@ function update() {
     // Track if we need to scroll
     let shouldScroll = false;
     
-   // Handle player movement
+    // Handle player movement
     if (keys.ArrowLeft || keys.a) {
-        player.velX = -player.speed * (isMobileDevice ? 1.2 : 1); // Slightly faster on mobile
+        player.velX = -player.speed * (isMobileDevice ? 1.2 : 1);
         player.facingRight = false;
         // No scrolling when moving left
     } else if (keys.ArrowRight || keys.d) {
-        player.velX = player.speed * (isMobileDevice ? 1.2 : 1); // Slightly faster on mobile
+        player.velX = player.speed * (isMobileDevice ? 1.2 : 1);
         player.facingRight = true;
         
-        // Scroll the world when player moves right and is past the middle of the screen
-        if (game.playerControlledScroll && player.x > canvas.width / (isMobileDevice ? 2.5 : 3)) {
+        // Scroll the world when player moves right past a threshold
+        // Use a lower threshold (more to the left) for mobile devices
+        const scrollThreshold = isMobileDevice ? 
+            canvas.width / 6 : // 1/6 of screen width for mobile 
+            canvas.width / 3;  // 1/3 of screen width for desktop
+            
+        if (game.playerControlledScroll && player.x > scrollThreshold) {
             shouldScroll = true;
-            // Stop player from moving past a certain point
+            // Stop player from moving past the threshold
             player.velX = 0;
             // Player stays in position but the world moves
             game.cameraX += game.scrollSpeed;
@@ -398,6 +404,9 @@ for (let i = monsters.length - 1; i >= 0; i--) {
     monster.velY += game.gravity;
     monster.y += monster.velY;
     
+    // Store the monster's original x position before applying scrolling
+    const originalX = monster.x;
+    
     // Move monsters with world if scrolling
     if (shouldScroll) {
         monster.x -= game.scrollSpeed;
@@ -422,10 +431,21 @@ for (let i = monsters.length - 1; i >= 0; i--) {
         }
     }
     
-    // Move monster left independently of scrolling
+    // Move monster left independently of scrolling, but with reduced speed when scrolling
     if (onPlatform) {
-        // Apply monster's own movement to the left
-        monster.x -= monster.speed;
+        // If we're scrolling, reduce or eliminate the monster's own movement
+        // to prevent them from moving too fast
+        if (shouldScroll) {
+            // Option 1: No additional movement when scrolling
+            // This makes monsters only move with the world scroll
+            // monster.x = originalX - game.scrollSpeed;
+            
+            // Option 2: Reduced speed when scrolling
+            monster.x -= monster.speed * 0.3; // Reduced movement speed during scrolling
+        } else {
+            // Normal speed when not scrolling
+            monster.x -= monster.speed;
+        }
         
         // Check if monster is at the left edge of its platform
         if (monster.currentPlatform !== undefined) {
@@ -438,8 +458,13 @@ for (let i = monsters.length - 1; i >= 0; i--) {
             }
         }
     } else {
-        // Just apply monster's speed if not on platform
-        monster.x -= monster.speed;
+        // When not on platform, apply normal speed if not scrolling,
+        // or reduced speed if scrolling
+        if (shouldScroll) {
+            monster.x -= monster.speed * 0.3;
+        } else {
+            monster.x -= monster.speed;
+        }
     }
     
     // Monster hits player
@@ -1088,8 +1113,8 @@ function restartGame() {
         gravity: 0.4,
         groundY: canvas.height - 50,
         scrollSpeed: 5,
-        monsterSpawnFrequency: 0.007, // Reduced from 0.01
-        powerUpSpawnRate: 350, // Increased from 300 (less frequent)
+        monsterSpawnFrequency: 0.009, // Reduced from 0.01
+        powerUpSpawnRate: 300, // Increased from 300 (less frequent)
         levelProgress: 0,
         levelLength: 9000, // Slightly shorter than original 10000
         platformDensity: 0.8, // Reduced from 1.0
