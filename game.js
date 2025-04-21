@@ -7,7 +7,6 @@ const levelCount = document.getElementById('level-count');
 const weaponType = document.getElementById('weapon-type');
 const gameOver = document.getElementById('game-over');
 const levelComplete = document.getElementById('level-complete');
-const finalScore = document.getElementById('final-score');
 const restartButton = document.getElementById('restart-button');
 const nextLevelButton = document.getElementById('next-level-button');
 let isMobileDevice = false;
@@ -1131,9 +1130,6 @@ function updateLivesDisplay() {
 function endGame() {
     game.running = false;
     
-    // Update the game over screen content
-    finalScore.textContent = game.score;
-    
     // Add a more prominent score display for mobile
     if (isMobileDevice) {
         // Clear any existing score display first
@@ -1366,7 +1362,7 @@ function setupMobileControls() {
     mobileControls.style.width = '100%';
     mobileControls.style.display = 'flex';
     mobileControls.style.justifyContent = 'space-between';
-    mobileControls.style.padding = '0 15px';
+    mobileControls.style.padding = '0 0px';
     mobileControls.style.boxSizing = 'border-box';
     mobileControls.style.zIndex = '1000';
     
