@@ -13,7 +13,7 @@ const nextLevelButton = document.getElementById('next-level-button');
 let isMobileDevice = false;
 
 // Add this at the beginning of your code to create a global offset variable
-const MOBILE_VERTICAL_OFFSET = 80; // This is the value you can adjust to move everything up
+const MOBILE_VERTICAL_OFFSET = 140; // This is the value you can adjust to move everything up
 
 // Detect if we're on a mobile device
 function detectMobileDevice() {
