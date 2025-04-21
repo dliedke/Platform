@@ -83,34 +83,21 @@ controlsDiv.style.borderRadius = '5px';
 controlsDiv.innerHTML = 'Controls: SPACE to Jump, X to Shoot, Arrow Keys to Move';
 document.getElementById('game-container').appendChild(controlsDiv);
 
-// Set canvas dimensions
-// Set canvas dimensions with mobile adjustments
+// Updated resizeCanvas function to handle game positioning correctly
 function resizeCanvas() {
-    // Use the visual viewport API for accurate viewport size on mobile
-    if (window.visualViewport) {
-        canvas.width = window.visualViewport.width;
-        canvas.height = window.visualViewport.height;
-    } else {
-        canvas.width = window.innerWidth;
-        canvas.height = window.innerHeight;
-    }
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
     
-    // Set ground level appropriately
-    const isMobile = window.innerWidth < 768;
-    if (isMobile) {
-        // Reserve space at bottom for controls (50px plus margin)
-        game.groundY = canvas.height - 70;
-    } else {
-        game.groundY = canvas.height - 50;
-    }
+    // Keep the ground at the standard position for both mobile and desktop
+    game.groundY = canvas.height - 50;
     
-    // Update player position
+    // Position player
     if (player) {
         player.y = game.groundY - player.height;
     }
     
-    // Re-create mobile controls after resize
-    if (isMobile) {
+    // Setup mobile controls if needed
+    if (isMobileDevice) {
         setupMobileControls();
     }
 }
@@ -1177,25 +1164,30 @@ if (!CanvasRenderingContext2D.prototype.roundRect) {
         return this;
     };
 }
+
+// Modified setupMobileControls function
 function setupMobileControls() {
+    // Only setup controls for mobile devices
+    if (!isMobileDevice) return;
+    
     // Remove any existing mobile controls
     const existingControls = document.getElementById('mobile-controls');
     if (existingControls) {
         existingControls.remove();
     }
     
-    // Create container that sits at the bottom of the visible area
+    // Create container for mobile controls
     const mobileControls = document.createElement('div');
     mobileControls.id = 'mobile-controls';
     mobileControls.style.position = 'absolute';
-    mobileControls.style.bottom = '10px'; // Small margin from bottom
+    mobileControls.style.bottom = '10px';
     mobileControls.style.left = '0';
     mobileControls.style.width = '100%';
     mobileControls.style.display = 'flex';
     mobileControls.style.justifyContent = 'space-between';
     mobileControls.style.padding = '0 15px';
     mobileControls.style.boxSizing = 'border-box';
-    mobileControls.style.pointerEvents = 'none'; // So it doesn't block other interactions
+    mobileControls.style.pointerEvents = 'none';
     
     // Left side buttons
     const leftControls = document.createElement('div');
@@ -1239,7 +1231,7 @@ function setupMobileControls() {
     jumpBtn.textContent = 'JUMP';
     jumpBtn.style.width = '55px';
     jumpBtn.style.height = '45px';
-    jumpBtn.style.fontSize = '14px';
+    jumpBtn.style.fontSize = '12px';
     jumpBtn.style.backgroundColor = 'rgba(0, 0, 0, 0.7)';
     jumpBtn.style.color = 'white';
     jumpBtn.style.border = '1px solid white';
@@ -1251,7 +1243,7 @@ function setupMobileControls() {
     shootBtn.textContent = 'SHOOT';
     shootBtn.style.width = '55px';
     shootBtn.style.height = '45px';
-    shootBtn.style.fontSize = '14px';
+    shootBtn.style.fontSize = '12px';
     shootBtn.style.backgroundColor = 'rgba(0, 0, 0, 0.7)';
     shootBtn.style.color = 'white';
     shootBtn.style.border = '1px solid white';
@@ -1265,8 +1257,8 @@ function setupMobileControls() {
     mobileControls.appendChild(leftControls);
     mobileControls.appendChild(rightControls);
     
-    // Add to document - directly to the canvas parent for proper positioning
-    canvas.parentElement.appendChild(mobileControls);
+    // Add to document
+    document.getElementById('game-container').appendChild(mobileControls);
     
     // Add event listeners for buttons
     leftBtn.addEventListener('touchstart', (e) => {
@@ -1315,6 +1307,7 @@ function setupMobileControls() {
         controlsDiv.style.display = 'none';
     }
 }
+
 
 // Touch movement handling
 let xDown = null;
