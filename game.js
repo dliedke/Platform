@@ -727,47 +727,50 @@ function drawMonster(monster) {
     ctx.fillRect(monster.x, monster.y - 15, monster.width * healthPercent, 8);
 }
 
-// Draw background with parallax effect based on camera position
+// Função de desenho do background corrigida para dispositivos móveis
 function drawBackground() {
-    // Sky gradient
+    // Gradient de céu
     const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
     gradient.addColorStop(0, '#87CEEB');
     gradient.addColorStop(1, '#E0F7FA');
     ctx.fillStyle = gradient;
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     
-    // Sun
+    // Sol
     ctx.fillStyle = '#FFEB3B';
     ctx.beginPath();
     ctx.arc(100, 100, 50, 0, Math.PI * 2);
     ctx.fill();
     
-    // Clouds - use game.cameraX for parallax
+    // Define a posição do chão de acordo com o tipo de dispositivo
+    const groundPosition = isMobileDevice ? game.groundY : game.groundY;
+    
+    // Nuvens - usando game.cameraX para efeito parallax
     ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
     for (let i = 0; i < 5; i++) {
         const cloudX = ((i * 300 - (game.cameraX * 0.1)) % (canvas.width * 2)) - 200;
         drawCloud(cloudX, 120 + i * 20, 100 + i * 20);
     }
     
-    // Far mountains (slowest parallax)
+    // Montanhas distantes (parallax mais lento)
     ctx.fillStyle = '#6A5ACD';
     for (let i = 0; i < 5; i++) {
         const mountainX = ((i * 500 - (game.cameraX * 0.2) % 2000) % (canvas.width * 3)) - 500;
-        drawMountain(mountainX, canvas.height - 150, 300, 150);
+        drawMountain(mountainX, groundPosition - 100, 300, 150); // Ajustado para ficar acima do chão
     }
     
-    // Closer hills (medium parallax)
+    // Colinas mais próximas (parallax médio)
     ctx.fillStyle = '#32CD32';
     for (let i = 0; i < 7; i++) {
         const hillX = ((i * 400 - (game.cameraX * 0.5) % 1600) % (canvas.width * 2)) - 400;
-        drawHill(hillX, canvas.height - 100, 200, 100);
+        drawHill(hillX, groundPosition - 50, 200, 100); // Ajustado para ficar acima do chão
     }
     
-    // Closest bushes (fastest parallax)
+    // Arbustos mais próximos (parallax mais rápido)
     ctx.fillStyle = '#228B22';
     for (let i = 0; i < 10; i++) {
         const bushX = ((i * 200 - (game.cameraX * 0.8) % 1000) % (canvas.width * 1.5)) - 200;
-        drawBush(bushX, canvas.height - 60, 100, 30);
+        drawBush(bushX, groundPosition - 10, 100, 30); // Ajustado para ficar acima do chão
     }
 }
 
@@ -1179,32 +1182,36 @@ if (!CanvasRenderingContext2D.prototype.roundRect) {
     };
 }
 
+// Mude o posicionamento dos controles para ficar mais acima do fundo
 function setupMobileControls() {
-    // Remove any existing mobile controls first
+    // Remove controles existentes
     const existingControls = document.getElementById('mobile-controls');
     if (existingControls) {
         existingControls.remove();
     }
     
-    // Create container for mobile controls
+    // Verifica se é dispositivo móvel usando a variável global
+    if (!isMobileDevice) return;
+    
+    // Cria container para controles móveis
     const mobileControls = document.createElement('div');
     mobileControls.id = 'mobile-controls';
     mobileControls.style.position = 'absolute';
-    mobileControls.style.bottom = '30px'; // Higher position from bottom
+    mobileControls.style.bottom = '90px'; // Posicionado mais acima como solicitado
     mobileControls.style.left = '0';
     mobileControls.style.width = '100%';
     mobileControls.style.display = 'flex';
     mobileControls.style.justifyContent = 'space-between';
     mobileControls.style.padding = '0 15px';
     mobileControls.style.boxSizing = 'border-box';
-    mobileControls.style.zIndex = '1000'; // Make sure they're above other elements
+    mobileControls.style.zIndex = '1000';
     
-    // Left side buttons
+    // Botões da esquerda
     const leftControls = document.createElement('div');
     leftControls.style.display = 'flex';
     leftControls.style.gap = '10px';
     
-    // Left button
+    // Botão esquerda
     const leftBtn = document.createElement('button');
     leftBtn.textContent = '←';
     leftBtn.style.width = '50px';
@@ -1215,7 +1222,7 @@ function setupMobileControls() {
     leftBtn.style.border = '2px solid white';
     leftBtn.style.borderRadius = '8px';
     
-    // Right button
+    // Botão direita
     const rightBtn = document.createElement('button');
     rightBtn.textContent = '→';
     rightBtn.style.width = '50px';
@@ -1229,12 +1236,12 @@ function setupMobileControls() {
     leftControls.appendChild(leftBtn);
     leftControls.appendChild(rightBtn);
     
-    // Right side buttons
+    // Botões da direita
     const rightControls = document.createElement('div');
     rightControls.style.display = 'flex';
     rightControls.style.gap = '10px';
     
-    // Jump button
+    // Botão pular
     const jumpBtn = document.createElement('button');
     jumpBtn.textContent = 'JUMP';
     jumpBtn.style.width = '60px';
@@ -1245,7 +1252,7 @@ function setupMobileControls() {
     jumpBtn.style.border = '2px solid white';
     jumpBtn.style.borderRadius = '8px';
     
-    // Shoot button
+    // Botão atirar
     const shootBtn = document.createElement('button');
     shootBtn.textContent = 'SHOOT';
     shootBtn.style.width = '60px';
@@ -1259,14 +1266,14 @@ function setupMobileControls() {
     rightControls.appendChild(jumpBtn);
     rightControls.appendChild(shootBtn);
     
-    // Add button containers to mobile controls
+    // Adiciona os containers de botões aos controles móveis
     mobileControls.appendChild(leftControls);
     mobileControls.appendChild(rightControls);
     
-    // Add to document
+    // Adiciona ao documento
     document.getElementById('game-container').appendChild(mobileControls);
     
-    // Add event listeners for buttons
+    // Eventos de toque para os botões
     leftBtn.addEventListener('touchstart', (e) => {
         e.preventDefault();
         keys.ArrowLeft = true;
@@ -1307,7 +1314,6 @@ function setupMobileControls() {
         keys.x = false;
     });
 }
-
 
 // Touch movement handling
 let xDown = null;
