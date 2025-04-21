@@ -14,6 +14,7 @@ let isMobileDevice = false;
 
 // Add this at the beginning of your code to create a global offset variable
 const MOBILE_VERTICAL_OFFSET = 140; // This is the value you can adjust to move everything up
+const MOBILE_MONSTER_SPEED_MODIFIER = 0.4; // Monsters are 60% slower on mobile
 
 // Detect if we're on a mobile device
 function detectMobileDevice() {
@@ -506,7 +507,7 @@ for (let i = monsters.length - 1; i >= 0; i--) {
                     opacity: 1,
                     particles: createExplosionParticles(monster.x + monster.width/2, monster.y + monster.height/2, 10),
                     frameCount: 0,
-                    maxFrames: 50 // How long the animation lasts
+                    maxFrames: 40 // How long the animation lasts
                 });
                 
                 monsters.splice(i, 1);
@@ -914,15 +915,18 @@ function drawBush(x, y, width, height) {
 
 function spawnMonster() {
     // Reduced spawn check globally
-    if (Math.random() > game.monsterSpawnFrequency * 0.6) { // 60% of original spawn rate
+    if (Math.random() > game.monsterSpawnFrequency * 0.6) {
         return;
     }
+    
+    // Apply speed modifier for mobile
+    const speedModifier = isMobileDevice ? MOBILE_MONSTER_SPEED_MODIFIER : 1;
     
     const monsterTypes = [
         {
             width: 40,
             height: 40,
-            speed: 1.2 + game.level * 0.15,
+            speed: (1.2 + game.level * 0.15) * speedModifier, // Apply speed modifier
             health: 1 * game.level,
             maxHealth: 1 * game.level,
             points: 10,
@@ -932,7 +936,7 @@ function spawnMonster() {
         {
             width: 60,
             height: 30,
-            speed: 1.6 + game.level * 0.12,
+            speed: (1.6 + game.level * 0.12) * speedModifier, // Apply speed modifier
             health: 2 * game.level,
             maxHealth: 2 * game.level,
             points: 20,
@@ -942,7 +946,7 @@ function spawnMonster() {
         {
             width: 50,
             height: 50,
-            speed: 0.8 + game.level * 0.08,
+            speed: (0.8 + game.level * 0.08) * speedModifier, // Apply speed modifier
             health: 3 * game.level,
             maxHealth: 3 * game.level,
             points: 30,
@@ -954,20 +958,26 @@ function spawnMonster() {
     const typeIndex = Math.floor(Math.random() * monsterTypes.length);
     const monsterType = monsterTypes[typeIndex];
     
-    // Find platforms that are ahead of the player's view
-    // Be more selective about which platforms to spawn monsters on
+    // Adjust the search area for platforms based on device
+    // For mobile, look for platforms further to the right
+    const searchStartX = canvas.width - 50;
+    const searchEndX = isMobileDevice ? 
+                       canvas.width + 400 : // Much further right on mobile
+                       canvas.width + 200;  // Normal distance on desktop
+    
+    // Find platforms in the adjusted area
     const enteringPlatforms = platforms.filter(p => 
-        p.x > canvas.width - 50 && 
-        p.x < canvas.width + 200 &&
+        p.x > searchStartX && 
+        p.x < searchEndX &&
         p.y < game.groundY - 20 &&
-        p.width >= monsterType.width + 60); // Increased width requirement
+        p.width >= monsterType.width + 60);
     
     if (enteringPlatforms.length > 0) {
         // Find the matching platform index
         const spawnPlatform = enteringPlatforms[Math.floor(Math.random() * enteringPlatforms.length)];
         const platformIndex = platforms.findIndex(p => p === spawnPlatform);
         
-        // Spawn monster at the RIGHT end of the platform (beginning of platform)
+        // Spawn monster at the RIGHT end of the platform
         const spawnX = spawnPlatform.x + spawnPlatform.width - monsterType.width - 20;
         
         monsters.push({
@@ -1120,7 +1130,30 @@ function updateLivesDisplay() {
 // End the game
 function endGame() {
     game.running = false;
+    
+    // Update the game over screen content
     finalScore.textContent = game.score;
+    
+    // Add a more prominent score display for mobile
+    if (isMobileDevice) {
+        // Clear any existing score display first
+        const existingScoreDisplay = document.getElementById('prominent-score');
+        if (existingScoreDisplay) {
+            existingScoreDisplay.remove();
+        }
+        
+        // Create prominent score display
+        const prominentScore = document.createElement('h1');
+        prominentScore.id = 'prominent-score';
+        prominentScore.textContent = `Score: ${game.score}`;
+        prominentScore.style.fontSize = '32px';
+        prominentScore.style.marginBottom = '20px';
+        prominentScore.style.color = '#FFD700'; // Gold color
+        
+        // Insert it at the beginning of the game over popup
+        gameOver.insertBefore(prominentScore, gameOver.firstChild);
+    }
+    
     gameOver.style.display = 'block';
 }
 
@@ -1133,18 +1166,29 @@ function completeLevel() {
         levelComplete.removeChild(levelComplete.lastChild);
     }
     
-    const continueMsg = document.createElement('p');
-    continueMsg.textContent = 'Press SPACE to continue';
-    continueMsg.style.marginTop = '10px';
-    levelComplete.appendChild(continueMsg);
+    // Only add the "Press SPACE" message on desktop
+    if (!isMobileDevice) {
+        const continueMsg = document.createElement('p');
+        continueMsg.textContent = 'Press SPACE to continue';
+        continueMsg.style.marginTop = '10px';
+        levelComplete.appendChild(continueMsg);
+    } else {
+        // For mobile, add a more touch-friendly message
+        const continueMsg = document.createElement('p');
+        continueMsg.textContent = 'Tap the Continue button to proceed';
+        continueMsg.style.marginTop = '10px';
+        levelComplete.appendChild(continueMsg);
+    }
     
     levelComplete.style.display = 'block';
     
     // Remove any existing space listeners first
     window.removeEventListener('keydown', spaceNextLevelListener);
     
-    // Add event listener for space to continue
-    window.addEventListener('keydown', spaceNextLevelListener);
+    // Add event listener for space to continue (only needed for desktop)
+    if (!isMobileDevice) {
+        window.addEventListener('keydown', spaceNextLevelListener);
+    }
 }
 
 // Handle space key to continue to next level
@@ -1237,6 +1281,9 @@ function restartGame() {
     projectiles = [];
     powerUps = [];
     
+    setupMobileControls();
+    resizeCanvas();
+
     generatePlatforms();
     createInitialPlatform();
     
