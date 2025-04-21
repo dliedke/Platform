@@ -10,6 +10,17 @@ const levelComplete = document.getElementById('level-complete');
 const finalScore = document.getElementById('final-score');
 const restartButton = document.getElementById('restart-button');
 const nextLevelButton = document.getElementById('next-level-button');
+let isMobileDevice = false;
+
+// Detect if we're on a mobile device
+function detectMobileDevice() {
+    isMobileDevice = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) 
+        || (window.innerWidth <= 767);
+}
+
+// Call this function on initialization
+detectMobileDevice();
+window.addEventListener('resize', detectMobileDevice);
 
 // Game state
 let game = {
@@ -20,15 +31,15 @@ let game = {
     weaponPower: 1,
     weaponTypes: ['Basic', 'Enhanced', 'Super', 'Ultra', 'Legendary'],
     gravity: 0.4,
-    groundY: 0, // Will be set properly in resizeCanvas
-    scrollSpeed: 5, // Now will only be applied when player moves right
-    monsterSpawnFrequency: 0.01, // Probability of spawning each frame
-    powerUpSpawnRate: 300,
+    groundY: canvas.height - 50,
+    scrollSpeed: 5,
+    monsterSpawnFrequency: 0.007, // Reduced from 0.01
+    powerUpSpawnRate: 350, // Increased from 300 (less frequent)
     levelProgress: 0,
-    levelLength: 10000,
-    platformDensity: 1.0, // Higher value = more platforms
-    playerControlledScroll: true, // New flag to enable player-controlled scrolling
-    cameraX: 0 // Track camera position
+    levelLength: 9000, // Slightly shorter than original 10000
+    platformDensity: 0.8, // Reduced from 1.0
+    playerControlledScroll: true,
+    cameraX: 0
 };
 
 // Update player physics for higher, slower jumps
@@ -95,10 +106,10 @@ function generatePlatforms() {
         color: '#4CAF50'
     });
     
-    // Generate a dense field of platforms with smaller sizes
-    const platformCount = Math.floor(30 * game.platformDensity);
+    // Generate a field of platforms with adjusted density
+    const platformCount = Math.floor(20 * game.platformDensity); // Reduced from 30 to 20
     
-    // Reduced platform sizes
+    // Platform sizes
     const platformSizes = [
         { width: 250, height: 25 },
         { width: 220, height: 25 },
@@ -116,7 +127,7 @@ function generatePlatforms() {
         game.groundY - 280
     ];
     
-    // Generate platforms with good distribution
+    // Generate platforms with better spacing
     for (let i = 0; i < platformCount; i++) {
         // Choose a random platform size
         const sizeIndex = Math.floor(Math.random() * platformSizes.length);
@@ -126,12 +137,12 @@ function generatePlatforms() {
         const heightIndex = Math.floor(Math.random() * possibleHeights.length);
         const height = possibleHeights[heightIndex];
         
-        // Calculate x position with good spacing
-        // Distribute platforms evenly across the level
-        const xPos = canvas.width + (i * canvas.width * 5 / platformCount);
+        // Calculate x position with increased spacing
+        // Distribute platforms evenly across the level with more space
+        const xPos = canvas.width + (i * canvas.width * 6 / platformCount); // Changed multiplier from 5 to 6
         
         // Add some random variation to prevent too much regularity
-        const xVariation = Math.random() * 100 - 50;
+        const xVariation = Math.random() * 120 - 60; // Increased variation
         
         platforms.push({
             x: xPos + xVariation,
@@ -141,12 +152,12 @@ function generatePlatforms() {
             color: '#795548'
         });
         
-        // Add some extra smaller platforms for level progression
-        if (Math.random() < 0.3) {
+        // Add some extra smaller platforms for level progression (reduced chance)
+        if (Math.random() < 0.15) { // Reduced from 0.3 to 0.15
             platforms.push({
-                x: xPos + 150 + Math.random() * 100, // Adjusted spacing
+                x: xPos + 180 + Math.random() * 120, // Increased spacing
                 y: height + (Math.random() > 0.5 ? -50 : 50),
-                width: 120 + Math.random() * 80, // Reduced from 200 + random
+                width: 120 + Math.random() * 80,
                 height: 25,
                 color: '#A1887F'
             });
@@ -156,6 +167,7 @@ function generatePlatforms() {
     // Sort platforms by x position for easier debugging
     platforms.sort((a, b) => a.x - b.x);
 }
+
 
 // Create a platform below the player at the start
 function createInitialPlatform() {
@@ -226,17 +238,17 @@ function update() {
     // Track if we need to scroll
     let shouldScroll = false;
     
-    // Handle player movement
+   // Handle player movement
     if (keys.ArrowLeft || keys.a) {
-        player.velX = -player.speed;
+        player.velX = -player.speed * (isMobileDevice ? 1.2 : 1); // Slightly faster on mobile
         player.facingRight = false;
         // No scrolling when moving left
     } else if (keys.ArrowRight || keys.d) {
-        player.velX = player.speed;
+        player.velX = player.speed * (isMobileDevice ? 1.2 : 1); // Slightly faster on mobile
         player.facingRight = true;
         
         // Scroll the world when player moves right and is past the middle of the screen
-        if (game.playerControlledScroll && player.x > canvas.width / 3) {
+        if (game.playerControlledScroll && player.x > canvas.width / (isMobileDevice ? 2.5 : 3)) {
             shouldScroll = true;
             // Stop player from moving past a certain point
             player.velX = 0;
@@ -777,12 +789,12 @@ function drawBush(x, y, width, height) {
     ctx.fill();
 }
 
-// Spawn a monster with platform tracking
 function spawnMonster() {
-    // Only spawn if random check passes
-    if (Math.random() > game.monsterSpawnFrequency) {
+    // Reduced spawn check globally
+    if (Math.random() > game.monsterSpawnFrequency * 0.6) { // 60% of original spawn rate
         return;
     }
+    
     const monsterTypes = [
         {
             width: 40,
@@ -820,11 +832,12 @@ function spawnMonster() {
     const monsterType = monsterTypes[typeIndex];
     
     // Find platforms that are ahead of the player's view
+    // Be more selective about which platforms to spawn monsters on
     const enteringPlatforms = platforms.filter(p => 
         p.x > canvas.width - 50 && 
         p.x < canvas.width + 200 &&
         p.y < game.groundY - 20 &&
-        p.width >= monsterType.width + 40);
+        p.width >= monsterType.width + 60); // Increased width requirement
     
     if (enteringPlatforms.length > 0) {
         // Find the matching platform index
@@ -1045,14 +1058,14 @@ function restartGame() {
         weaponTypes: ['Basic', 'Enhanced', 'Super', 'Ultra', 'Legendary'],
         gravity: 0.4,
         groundY: canvas.height - 50,
-        scrollSpeed: 5, // Now will only be applied when player moves right
-        monsterSpawnFrequency: 0.01, // Probability of spawning each frame
-        powerUpSpawnRate: 300,
+        scrollSpeed: 5,
+        monsterSpawnFrequency: 0.007, // Reduced from 0.01
+        powerUpSpawnRate: 350, // Increased from 300 (less frequent)
         levelProgress: 0,
-        levelLength: 10000,
-        platformDensity: 1.0, // Higher value = more platforms
-        playerControlledScroll: true, // New flag to enable player-controlled scrolling
-        cameraX: 0 // Track camera position
+        levelLength: 9000, // Slightly shorter than original 10000
+        platformDensity: 0.8, // Reduced from 1.0
+        playerControlledScroll: true,
+        cameraX: 0
     };
     
     player = {
@@ -1140,9 +1153,8 @@ if (!CanvasRenderingContext2D.prototype.roundRect) {
     };
 }
 
-// Improve mobile controls by adding on-screen buttons
 function setupMobileControls() {
-    // Remove any existing mobile controls first
+    // Remove any existing mobile controls
     const existingControls = document.getElementById('mobile-controls');
     if (existingControls) {
         existingControls.remove();
@@ -1153,26 +1165,24 @@ function setupMobileControls() {
     mobileControls.id = 'mobile-controls';
     mobileControls.style.position = 'absolute';
     mobileControls.style.bottom = '20px';
-    mobileControls.style.left = '0';
     mobileControls.style.width = '100%';
     mobileControls.style.display = 'flex';
     mobileControls.style.justifyContent = 'space-between';
-    mobileControls.style.padding = '0 20px';
-    mobileControls.style.boxSizing = 'border-box';
     mobileControls.style.pointerEvents = 'none'; // Container doesn't block events
     
-    // Create direction buttons container (left side)
+    // Direction buttons (left side)
     const directionButtons = document.createElement('div');
     directionButtons.style.display = 'flex';
+    directionButtons.style.marginLeft = '20px';
     directionButtons.style.gap = '10px';
     
     // Left button
     const leftBtn = document.createElement('button');
     leftBtn.textContent = '←';
-    leftBtn.style.width = '60px';
-    leftBtn.style.height = '60px';
-    leftBtn.style.fontSize = '24px';
-    leftBtn.style.backgroundColor = 'rgba(255, 255, 255, 0.5)';
+    leftBtn.style.width = '50px';
+    leftBtn.style.height = '50px';
+    leftBtn.style.fontSize = '20px';
+    leftBtn.style.backgroundColor = 'rgba(255, 255, 255, 0.4)';
     leftBtn.style.border = 'none';
     leftBtn.style.borderRadius = '50%';
     leftBtn.style.pointerEvents = 'auto';
@@ -1180,50 +1190,51 @@ function setupMobileControls() {
     // Right button
     const rightBtn = document.createElement('button');
     rightBtn.textContent = '→';
-    rightBtn.style.width = '60px';
-    rightBtn.style.height = '60px';
-    rightBtn.style.fontSize = '24px';
-    rightBtn.style.backgroundColor = 'rgba(255, 255, 255, 0.5)';
+    rightBtn.style.width = '50px';
+    rightBtn.style.height = '50px';
+    rightBtn.style.fontSize = '20px';
+    rightBtn.style.backgroundColor = 'rgba(255, 255, 255, 0.4)';
     rightBtn.style.border = 'none';
     rightBtn.style.borderRadius = '50%';
     rightBtn.style.pointerEvents = 'auto';
     
-    // Add direction buttons to container
+    // Add direction buttons
     directionButtons.appendChild(leftBtn);
     directionButtons.appendChild(rightBtn);
     
-    // Create action buttons container (right side)
+    // Action buttons (right side)
     const actionButtons = document.createElement('div');
     actionButtons.style.display = 'flex';
+    actionButtons.style.marginRight = '20px';
     actionButtons.style.gap = '10px';
     
     // Jump button
     const jumpBtn = document.createElement('button');
     jumpBtn.textContent = 'Jump';
-    jumpBtn.style.width = '80px';
-    jumpBtn.style.height = '60px';
-    jumpBtn.style.fontSize = '18px';
-    jumpBtn.style.backgroundColor = 'rgba(255, 255, 255, 0.5)';
+    jumpBtn.style.width = '60px';
+    jumpBtn.style.height = '50px';
+    jumpBtn.style.fontSize = '14px';
+    jumpBtn.style.backgroundColor = 'rgba(255, 255, 255, 0.4)';
     jumpBtn.style.border = 'none';
-    jumpBtn.style.borderRadius = '30px';
+    jumpBtn.style.borderRadius = '25px';
     jumpBtn.style.pointerEvents = 'auto';
     
     // Shoot button
     const shootBtn = document.createElement('button');
     shootBtn.textContent = 'Shoot';
-    shootBtn.style.width = '80px';
-    shootBtn.style.height = '60px';
-    shootBtn.style.fontSize = '18px';
-    shootBtn.style.backgroundColor = 'rgba(255, 255, 255, 0.5)';
+    shootBtn.style.width = '60px';
+    shootBtn.style.height = '50px';
+    shootBtn.style.fontSize = '14px';
+    shootBtn.style.backgroundColor = 'rgba(255, 255, 255, 0.4)';
     shootBtn.style.border = 'none';
-    shootBtn.style.borderRadius = '30px';
+    shootBtn.style.borderRadius = '25px';
     shootBtn.style.pointerEvents = 'auto';
     
-    // Add action buttons to container
+    // Add action buttons
     actionButtons.appendChild(jumpBtn);
     actionButtons.appendChild(shootBtn);
     
-    // Add all button containers to mobile controls
+    // Add button containers to mobile controls
     mobileControls.appendChild(directionButtons);
     mobileControls.appendChild(actionButtons);
     
@@ -1271,6 +1282,12 @@ function setupMobileControls() {
     // Add to document
     document.getElementById('game-container').appendChild(mobileControls);
     
+    // Hide desktop controls on mobile
+    const controlsDiv = document.getElementById('controls');
+    if (controlsDiv) {
+        controlsDiv.style.display = 'none';
+    }
+    
     // Add media query to show/hide based on device
     const styleTag = document.createElement('style');
     styleTag.textContent = `
@@ -1278,10 +1295,103 @@ function setupMobileControls() {
             #mobile-controls {
                 display: none !important;
             }
+            #controls {
+                display: block !important;
+            }
+        }
+        @media (max-width: 767px) {
+            #controls {
+                display: none !important;
+            }
         }
     `;
     document.head.appendChild(styleTag);
 }
+
+// Touch movement handling
+let xDown = null;
+let yDown = null;
+let touchActive = false;
+let lastTouchX = 0;
+
+function handleTouchStart(evt) {
+    // Check if touch is in bottom action button area
+    const bottomActionArea = canvas.height - 150;
+    if (evt.touches[0].clientY > bottomActionArea && evt.touches[0].clientX > canvas.width - 200) {
+        // This area is reserved for jump/shoot buttons
+        return;
+    }
+    
+    const firstTouch = evt.touches[0];
+    xDown = firstTouch.clientX;
+    yDown = firstTouch.clientY;
+    touchActive = true;
+    lastTouchX = xDown;
+    
+    // Reset movement keys
+    keys.ArrowLeft = false;
+    keys.ArrowRight = false;
+}
+
+function handleTouchMove(evt) {
+    if (!touchActive) return;
+    
+    // Check if touch is in bottom action button area
+    const bottomActionArea = canvas.height - 150;
+    if (evt.touches[0].clientY > bottomActionArea && evt.touches[0].clientX > canvas.width - 200) {
+        // This area is reserved for jump/shoot buttons
+        return;
+    }
+    
+    if (!xDown || !yDown) return;
+    
+    const xUp = evt.touches[0].clientX;
+    const yUp = evt.touches[0].clientY;
+    
+    const xDiff = xDown - xUp;
+    const yDiff = yDown - yUp;
+    
+    // Determine horizontal movement direction based on current touch position
+    // compared to last known position
+    if (xUp < lastTouchX - 5) {
+        // Moving left
+        keys.ArrowLeft = true;
+        keys.ArrowRight = false;
+    } else if (xUp > lastTouchX + 5) {
+        // Moving right
+        keys.ArrowRight = true;
+        keys.ArrowLeft = false;
+    }
+    
+    // Update last touch X position
+    lastTouchX = xUp;
+    
+    // Detect quick upward swipe for jump
+    if (Math.abs(yDiff) > Math.abs(xDiff) && yDiff > 50 && !player.isJumping) {
+        keys[' '] = true;
+        // Reset after a short delay
+        setTimeout(() => {
+            keys[' '] = false;
+        }, 100);
+        
+        // Reset touch start position to prevent multiple jumps
+        yDown = yUp;
+    }
+}
+
+function handleTouchEnd(evt) {
+    // Reset movement keys
+    keys.ArrowLeft = false;
+    keys.ArrowRight = false;
+    touchActive = false;
+    xDown = null;
+    yDown = null;
+}
+
+// Update existing canvas event listeners
+canvas.removeEventListener('touchstart', function(){});
+canvas.removeEventListener('touchend', function(){});
+canvas.removeEventListener('touchmove', function(){});
 
 // Add this line near the end of the file, before the game loop starts
 setupMobileControls();

@@ -63,6 +63,34 @@
             cursor: pointer;
             border-radius: 5px;
         }
+         /* Add these styles to the existing styles in index.html */
+    @media (max-width: 767px) {
+        #ui-container {
+            font-size: 16px;
+            top: 5px;
+            left: 5px;
+        }
+        
+        #controls {
+            display: none !important;
+        }
+        
+        #game-over, #level-complete {
+            width: 80%;
+            padding: 15px;
+        }
+        
+        button {
+            padding: 8px 16px;
+            font-size: 14px;
+        }
+    }
+    
+    /* Prevent pull-to-refresh on mobile */
+    html, body {
+        overscroll-behavior-y: contain;
+        touch-action: manipulation;
+    }
     </style>
 </head>
 <body>
