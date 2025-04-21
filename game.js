@@ -12,6 +12,9 @@ const restartButton = document.getElementById('restart-button');
 const nextLevelButton = document.getElementById('next-level-button');
 let isMobileDevice = false;
 
+// Add this at the beginning of your code to create a global offset variable
+const MOBILE_VERTICAL_OFFSET = 80; // This is the value you can adjust to move everything up
+
 // Detect if we're on a mobile device
 function detectMobileDevice() {
     isMobileDevice = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) 
@@ -83,13 +86,17 @@ controlsDiv.style.borderRadius = '5px';
 controlsDiv.innerHTML = 'Controls: SPACE to Jump, X to Shoot, Arrow Keys to Move';
 document.getElementById('game-container').appendChild(controlsDiv);
 
-// Updated resizeCanvas function to handle game positioning correctly
+// Modify the resizeCanvas function to include this offset
 function resizeCanvas() {
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;
-    
-    // Keep the ground at the standard position for both mobile and desktop
-    game.groundY = canvas.height - 50;
+        
+    // Set ground level with offset for mobile
+    if (isMobileDevice) {
+        game.groundY = canvas.height - 50 - MOBILE_VERTICAL_OFFSET;
+    } else {
+        game.groundY = canvas.height - 50;
+    }
     
     // Position player
     if (player) {
@@ -99,8 +106,15 @@ function resizeCanvas() {
     // Setup mobile controls if needed
     if (isMobileDevice) {
         setupMobileControls();
+    } else {
+        // Remove mobile controls if we're on desktop
+        const mobileControls = document.getElementById('mobile-controls');
+        if (mobileControls) {
+            mobileControls.remove();
+        }
     }
 }
+
 
 resizeCanvas();
 window.addEventListener('resize', resizeCanvas);
@@ -1165,12 +1179,8 @@ if (!CanvasRenderingContext2D.prototype.roundRect) {
     };
 }
 
-// Modified setupMobileControls function
 function setupMobileControls() {
-    // Only setup controls for mobile devices
-    if (!isMobileDevice) return;
-    
-    // Remove any existing mobile controls
+    // Remove any existing mobile controls first
     const existingControls = document.getElementById('mobile-controls');
     if (existingControls) {
         existingControls.remove();
@@ -1180,14 +1190,14 @@ function setupMobileControls() {
     const mobileControls = document.createElement('div');
     mobileControls.id = 'mobile-controls';
     mobileControls.style.position = 'absolute';
-    mobileControls.style.bottom = '10px';
+    mobileControls.style.bottom = '30px'; // Higher position from bottom
     mobileControls.style.left = '0';
     mobileControls.style.width = '100%';
     mobileControls.style.display = 'flex';
     mobileControls.style.justifyContent = 'space-between';
     mobileControls.style.padding = '0 15px';
     mobileControls.style.boxSizing = 'border-box';
-    mobileControls.style.pointerEvents = 'none';
+    mobileControls.style.zIndex = '1000'; // Make sure they're above other elements
     
     // Left side buttons
     const leftControls = document.createElement('div');
@@ -1197,26 +1207,24 @@ function setupMobileControls() {
     // Left button
     const leftBtn = document.createElement('button');
     leftBtn.textContent = '←';
-    leftBtn.style.width = '45px';
-    leftBtn.style.height = '45px';
-    leftBtn.style.fontSize = '18px';
-    leftBtn.style.backgroundColor = 'rgba(0, 0, 0, 0.7)';
+    leftBtn.style.width = '50px';
+    leftBtn.style.height = '50px';
+    leftBtn.style.fontSize = '24px';
+    leftBtn.style.backgroundColor = 'rgba(0, 0, 0, 0.6)';
     leftBtn.style.color = 'white';
-    leftBtn.style.border = '1px solid white';
-    leftBtn.style.borderRadius = '5px';
-    leftBtn.style.pointerEvents = 'auto';
+    leftBtn.style.border = '2px solid white';
+    leftBtn.style.borderRadius = '8px';
     
     // Right button
     const rightBtn = document.createElement('button');
     rightBtn.textContent = '→';
-    rightBtn.style.width = '45px';
-    rightBtn.style.height = '45px';
-    rightBtn.style.fontSize = '18px';
-    rightBtn.style.backgroundColor = 'rgba(0, 0, 0, 0.7)';
+    rightBtn.style.width = '50px';
+    rightBtn.style.height = '50px';
+    rightBtn.style.fontSize = '24px';
+    rightBtn.style.backgroundColor = 'rgba(0, 0, 0, 0.6)';
     rightBtn.style.color = 'white';
-    rightBtn.style.border = '1px solid white';
-    rightBtn.style.borderRadius = '5px';
-    rightBtn.style.pointerEvents = 'auto';
+    rightBtn.style.border = '2px solid white';
+    rightBtn.style.borderRadius = '8px';
     
     leftControls.appendChild(leftBtn);
     leftControls.appendChild(rightBtn);
@@ -1229,26 +1237,24 @@ function setupMobileControls() {
     // Jump button
     const jumpBtn = document.createElement('button');
     jumpBtn.textContent = 'JUMP';
-    jumpBtn.style.width = '55px';
-    jumpBtn.style.height = '45px';
-    jumpBtn.style.fontSize = '12px';
-    jumpBtn.style.backgroundColor = 'rgba(0, 0, 0, 0.7)';
+    jumpBtn.style.width = '60px';
+    jumpBtn.style.height = '50px';
+    jumpBtn.style.fontSize = '14px';
+    jumpBtn.style.backgroundColor = 'rgba(0, 0, 0, 0.6)';
     jumpBtn.style.color = 'white';
-    jumpBtn.style.border = '1px solid white';
-    jumpBtn.style.borderRadius = '5px';
-    jumpBtn.style.pointerEvents = 'auto';
+    jumpBtn.style.border = '2px solid white';
+    jumpBtn.style.borderRadius = '8px';
     
     // Shoot button
     const shootBtn = document.createElement('button');
     shootBtn.textContent = 'SHOOT';
-    shootBtn.style.width = '55px';
-    shootBtn.style.height = '45px';
-    shootBtn.style.fontSize = '12px';
-    shootBtn.style.backgroundColor = 'rgba(0, 0, 0, 0.7)';
+    shootBtn.style.width = '60px';
+    shootBtn.style.height = '50px';
+    shootBtn.style.fontSize = '14px';
+    shootBtn.style.backgroundColor = 'rgba(0, 0, 0, 0.6)';
     shootBtn.style.color = 'white';
-    shootBtn.style.border = '1px solid white';
-    shootBtn.style.borderRadius = '5px';
-    shootBtn.style.pointerEvents = 'auto';
+    shootBtn.style.border = '2px solid white';
+    shootBtn.style.borderRadius = '8px';
     
     rightControls.appendChild(jumpBtn);
     rightControls.appendChild(shootBtn);
@@ -1300,12 +1306,6 @@ function setupMobileControls() {
         e.preventDefault();
         keys.x = false;
     });
-    
-    // Hide desktop controls
-    const controlsDiv = document.getElementById('controls');
-    if (controlsDiv) {
-        controlsDiv.style.display = 'none';
-    }
 }
 
 
