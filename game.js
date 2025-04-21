@@ -70,6 +70,7 @@ let platforms = [];
 let monsters = [];
 let projectiles = [];
 let powerUps = [];
+let dyingMonsters = []; // New array for monsters in their death animation
 
 // Add control instructions
 const controlsDiv = document.createElement('div');
@@ -478,28 +479,42 @@ for (let i = monsters.length - 1; i >= 0; i--) {
         monsters.splice(i, 1);
         continue;
     }
+
+     // Projectile hits monster   
+    let monsterHit = false;
+    for (let j = projectiles.length - 1; j >= 0; j--) {
+        let projectile = projectiles[j];
         
-        // Projectile hits monster
-        let monsterHit = false;
-        for (let j = projectiles.length - 1; j >= 0; j--) {
-            let projectile = projectiles[j];
+        if (projectile.x < monster.x + monster.width &&
+            projectile.x + projectile.width > monster.x &&
+            projectile.y < monster.y + monster.height &&
+            projectile.y + projectile.height > monster.y) {
             
-            if (projectile.x < monster.x + monster.width &&
-                projectile.x + projectile.width > monster.x &&
-                projectile.y < monster.y + monster.height &&
-                projectile.y + projectile.height > monster.y) {
+            monster.health -= projectile.power;
+            projectiles.splice(j, 1);
+            
+            if (monster.health <= 0) {
+                game.score += monster.points;
                 
-                monster.health -= projectile.power;
-                projectiles.splice(j, 1);
+                // Instead of immediately removing the monster, add it to dyingMonsters
+                dyingMonsters.push({
+                    x: monster.x,
+                    y: monster.y,
+                    width: monster.width,
+                    height: monster.height,
+                    color: monster.color,
+                    opacity: 1,
+                    particles: createExplosionParticles(monster.x + monster.width/2, monster.y + monster.height/2, 10),
+                    frameCount: 0,
+                    maxFrames: 50 // How long the animation lasts
+                });
                 
-                if (monster.health <= 0) {
-                    game.score += monster.points;
-                    monsters.splice(i, 1);
-                    monsterHit = true;
-                    break;
-                }
+                monsters.splice(i, 1);
+                monsterHit = true;
+                break;
             }
         }
+    }
         
         if (monsterHit) continue;
         
@@ -562,6 +577,35 @@ for (let i = monsters.length - 1; i >= 0; i--) {
         completeLevel();
     }
     
+    // Update dying monsters
+    for (let i = dyingMonsters.length - 1; i >= 0; i--) {
+        let dyingMonster = dyingMonsters[i];
+        
+        // Update frame count
+        dyingMonster.frameCount++;
+        
+        // Update opacity
+        dyingMonster.opacity = 1 - (dyingMonster.frameCount / dyingMonster.maxFrames);
+        
+        // Update particles
+        for (let j = 0; j < dyingMonster.particles.length; j++) {
+            let particle = dyingMonster.particles[j];
+            particle.x += particle.speedX;
+            particle.y += particle.speedY;
+            particle.opacity = dyingMonster.opacity;
+        }
+        
+        // Move with world scrolling
+        if (shouldScroll) {
+            dyingMonster.x -= game.scrollSpeed;
+        }
+        
+        // Remove dying monster if animation is complete
+        if (dyingMonster.frameCount >= dyingMonster.maxFrames) {
+            dyingMonsters.splice(i, 1);
+        }
+    }
+
     // Update UI
     updateUI();
 }
@@ -607,8 +651,33 @@ function draw() {
         let monster = monsters[i];
         drawMonster(monster);
     }
-    
-    // Draw power-ups
+
+    // Draw dying monsters
+    for (let i = 0; i < dyingMonsters.length; i++) {
+        let dyingMonster = dyingMonsters[i];
+        
+        // Draw fading monster
+        ctx.globalAlpha = dyingMonster.opacity;
+        ctx.fillStyle = dyingMonster.color;
+        ctx.beginPath();
+        ctx.roundRect(dyingMonster.x, dyingMonster.y, dyingMonster.width, dyingMonster.height, 5);
+        ctx.fill();
+        
+        // Draw explosion particles
+        for (let j = 0; j < dyingMonster.particles.length; j++) {
+            let particle = dyingMonster.particles[j];
+            ctx.fillStyle = particle.color;
+            ctx.globalAlpha = particle.opacity;
+            ctx.beginPath();
+            ctx.arc(particle.x, particle.y, particle.size, 0, Math.PI * 2);
+            ctx.fill();
+        }
+        
+        // Reset global alpha
+        ctx.globalAlpha = 1;
+    }
+        
+        // Draw power-ups
     for (let i = 0; i < powerUps.length; i++) {
         let powerUp = powerUps[i];
         ctx.fillStyle = powerUp.color;
@@ -991,6 +1060,29 @@ function applyPowerUp(type) {
     }
 }
 
+// Function to create explosion particles
+function createExplosionParticles(x, y, count) {
+    const particles = [];
+    for (let i = 0; i < count; i++) {
+        particles.push({
+            x: x,
+            y: y,
+            size: 3 + Math.random() * 5,
+            speedX: (Math.random() - 0.5) * 5,
+            speedY: (Math.random() - 0.5) * 5,
+            color: getRandomExplosionColor(),
+            opacity: 1
+        });
+    }
+    return particles;
+}
+
+// Get random color for explosion particles
+function getRandomExplosionColor() {
+    const colors = ['#FF4500', '#FFA500', '#FFFF00', '#FF0000', '#FF69B4'];
+    return colors[Math.floor(Math.random() * colors.length)];
+}
+
 // Get color based on weapon power
 function getWeaponColor(power) {
     const colors = ['#FFFF00', '#FFA500', '#FF4500', '#9932CC', '#FF00FF'];
@@ -1222,7 +1314,7 @@ function setupMobileControls() {
     const mobileControls = document.createElement('div');
     mobileControls.id = 'mobile-controls';
     mobileControls.style.position = 'absolute';
-    mobileControls.style.bottom = '100px'; // Posicionado mais acima como solicitado
+    mobileControls.style.bottom = '110px'; // Posicionado mais acima como solicitado
     mobileControls.style.left = '0';
     mobileControls.style.width = '100%';
     mobileControls.style.display = 'flex';
